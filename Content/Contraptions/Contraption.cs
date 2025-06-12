@@ -1,15 +1,15 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
-using System.Drawing;
 using Terraria;
 using Terraria.DataStructures;
-using Terraria.ID;
-using Terraria.Localization;
+using Terraria.Graphics.Capture;
 using Terraria.ModLoader;
-using Terraria.ModLoader.Utilities;
+
 using Color = Microsoft.Xna.Framework.Color;
+using Point = Microsoft.Xna.Framework.Point;
 using Rectangle = Microsoft.Xna.Framework.Rectangle;
+using Filters = Terraria.Graphics.Effects.Filters;
 
 namespace Mechanica.Content.Contraptions
 {
@@ -17,6 +17,8 @@ namespace Mechanica.Content.Contraptions
     {
         Vector2 mStartPos;
 		Vector2 mDefaultStep = new Vector2(1f, 0f);
+
+        RenderTarget2D mTileTexture;
 
 		public override void SetStaticDefaults()
         {
@@ -36,7 +38,37 @@ namespace Mechanica.Content.Contraptions
         public override void OnSpawn(IEntitySource source)
         {
             mStartPos = NPC.position;
-        }
+
+            // Determine Capture Region
+			Point start_pos_tile = mStartPos.ToTileCoordinates();
+
+			start_pos_tile.X -= 10;
+			start_pos_tile.Y -= 10;
+
+			const int capture_width = 20;
+            const int capture_height = 20;
+            const int tile_size = 16;
+
+			// Init Render targets and capture settings
+			RenderTarget2D render_target = new RenderTarget2D(Main.instance.GraphicsDevice, capture_width * tile_size, capture_height * tile_size);
+			RenderTarget2D screen_target1 = new RenderTarget2D(Main.instance.GraphicsDevice, capture_width * tile_size, capture_height * tile_size);
+			RenderTarget2D screen_target2 = new RenderTarget2D(Main.instance.GraphicsDevice, capture_width * tile_size, capture_height * tile_size);
+			CaptureSettings settings = new CaptureSettings();
+			settings.CaptureBackground = false;
+			settings.CaptureEntities = false;
+			settings.CaptureMech = false;
+
+			Rectangle capture_area = new Rectangle(start_pos_tile.X, start_pos_tile.Y, capture_width, capture_height);
+
+            // Render region to texture
+			Main.instance.TilesRenderer.PrepareForAreaDrawing(capture_area.Left, capture_area.Right, capture_area.Top, capture_area.Bottom, false);
+			Main.instance.TilePaintSystem.PrepareAllRequests();
+			Filters.Scene.BeginCapture(screen_target1, Color.Transparent);
+			Main.instance.DrawCapture(capture_area, settings);
+			Filters.Scene.EndCapture(render_target, screen_target1, screen_target2, Color.Transparent);
+
+			mTileTexture = render_target;
+		}
 
         public override void AI()
         {
@@ -48,7 +80,13 @@ namespace Mechanica.Content.Contraptions
             }
 
             NPC.position += mDefaultStep;
+			NPC.rotation += 0.01f;
         }
+
+		public override bool PreDraw(SpriteBatch spriteBatch, Vector2 screenPos, Color drawColor)
+		{
+			return false;
+		}
 
 		public override void PostDraw(SpriteBatch spriteBatch, Vector2 screenPos, Color drawColor)
 		{
@@ -62,7 +100,10 @@ namespace Mechanica.Content.Contraptions
 
             texture.SetData(colorData);
 
-		    spriteBatch.Draw(texture, NPC.Center - Main.screenPosition, Color.Cyan);
+            Vector2 draw_pos = NPC.Center - Main.screenPosition;
+            draw_pos.Y -= 640;
+
+			spriteBatch.Draw(mTileTexture, draw_pos, drawColor);
 		}
 
 		public override bool ModifyCollisionData(Rectangle victimHitbox, ref int immunityCooldownSlot, ref MultipliableFloat damageMultiplier, ref Rectangle npcHitbox)
