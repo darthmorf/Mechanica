@@ -1,0 +1,3 @@
+displayName = Mechanica
+author = darthmorf
+version = 0.1
