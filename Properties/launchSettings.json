@@ -3,7 +3,7 @@
 		"Terraria": {
 			"commandName": "Executable",
 			"executablePath": "$(DotNetName)",
-			"commandLineArgs": "$(tMLPath)",
+			"commandLineArgs": "$(tMLPath) -skipselect \"darthmorf:Putt-rarria",
 			"workingDirectory": "$(tMLSteamPath)"
 		},
 		"TerrariaServer": {
