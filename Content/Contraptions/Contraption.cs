@@ -101,9 +101,10 @@ namespace Mechanica.Content.Contraptions
             texture.SetData(colorData);
 
             Vector2 draw_pos = NPC.Center - Main.screenPosition;
+            Vector2 centre = new Vector2(mTileTexture.Width / 2, mTileTexture.Height / 2);
             draw_pos.Y -= 640;
 
-			spriteBatch.Draw(mTileTexture, draw_pos, drawColor);
+			spriteBatch.Draw(mTileTexture, draw_pos, null, drawColor, NPC.rotation, centre, 1, SpriteEffects.None, 0);
 		}
 
 		public override bool ModifyCollisionData(Rectangle victimHitbox, ref int immunityCooldownSlot, ref MultipliableFloat damageMultiplier, ref Rectangle npcHitbox)
