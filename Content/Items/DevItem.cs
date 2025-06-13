@@ -4,6 +4,7 @@ using Terraria.ID;
 using Terraria.ModLoader;
 using Mechanica.Content.Contraptions;
 using System;
+using Microsoft.Xna.Framework;
 
 namespace Mechanica.Content.Items
 {
@@ -34,7 +35,15 @@ namespace Mechanica.Content.Items
 
 		public override bool? UseItem(Player player)
 		{
-			NPC.NewNPC(NPC.GetSource_None(), Convert.ToInt32(Main.MouseWorld.X), Convert.ToInt32(Main.MouseWorld.Y), ModContent.NPCType<Contraption>());
+            // Get cursor pos aligned to the tile grid
+            Vector2 mouse_pos = Main.MouseWorld;
+            Point mouse_pos_tile = mouse_pos.ToTileCoordinates();
+            mouse_pos = mouse_pos_tile.ToWorldCoordinates();
+
+            mouse_pos.X -= 8;
+            mouse_pos.Y -= 8;
+
+			NPC.NewNPC(NPC.GetSource_None(), Convert.ToInt32(mouse_pos.X), Convert.ToInt32(mouse_pos.Y), ModContent.NPCType<Contraption>());
 			return true;
 		}
 

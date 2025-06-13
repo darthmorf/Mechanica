@@ -16,9 +16,13 @@ namespace Mechanica.Content.Contraptions
     class Contraption : ModNPC
     {
         Vector2 mStartPos;
-		Vector2 mDefaultStep = new Vector2(1f, 0f);
+		Vector2 mDefaultStep = new Vector2(0f, .2f);
 
         RenderTarget2D mTileTexture;
+
+        const int cTileWidth = 10;
+        const int cTileHeight = 10;
+        const int cTileSize = 16;
 
 		public override void SetStaticDefaults()
         {
@@ -27,38 +31,43 @@ namespace Mechanica.Content.Contraptions
 
         public override void SetDefaults()
         {
-            NPC.width = 2;
-            NPC.height = 2;
+            NPC.width = cTileWidth * cTileSize;
+            NPC.height = cTileHeight * cTileSize;
             NPC.aiStyle = -1;
             NPC.dontTakeDamage = true;
             NPC.lifeMax = 999;
             NPC.noGravity = true;
+            NPC.noTileCollide = true;
         }
 
         public override void OnSpawn(IEntitySource source)
         {
-            mStartPos = NPC.position;
+			mStartPos = NPC.position;
 
             // Determine Capture Region
-			Point start_pos_tile = mStartPos.ToTileCoordinates();
 
-			start_pos_tile.X -= 10;
-			start_pos_tile.Y -= 10;
+			Vector2 start_pos = mStartPos;
+			int capture_width = NPC.width;
+            int capture_height = NPC.height;
 
-			const int capture_width = 20;
-            const int capture_height = 20;
-            const int tile_size = 16;
+          //  start_pos.X += capture_width / 2;
+            start_pos.Y += capture_height / 2;
+
+			mStartPos = start_pos;
+            NPC.position = start_pos;
+
+			Point start_pos_tile = start_pos.ToTileCoordinates();
 
 			// Init Render targets and capture settings
-			RenderTarget2D render_target = new RenderTarget2D(Main.instance.GraphicsDevice, capture_width * tile_size, capture_height * tile_size);
-			RenderTarget2D screen_target1 = new RenderTarget2D(Main.instance.GraphicsDevice, capture_width * tile_size, capture_height * tile_size);
-			RenderTarget2D screen_target2 = new RenderTarget2D(Main.instance.GraphicsDevice, capture_width * tile_size, capture_height * tile_size);
+			RenderTarget2D render_target = new RenderTarget2D(Main.instance.GraphicsDevice, capture_width, capture_height);
+			RenderTarget2D screen_target1 = new RenderTarget2D(Main.instance.GraphicsDevice, capture_width, capture_height);
+			RenderTarget2D screen_target2 = new RenderTarget2D(Main.instance.GraphicsDevice, capture_width, capture_height);
 			CaptureSettings settings = new CaptureSettings();
 			settings.CaptureBackground = false;
 			settings.CaptureEntities = false;
 			settings.CaptureMech = false;
 
-			Rectangle capture_area = new Rectangle(start_pos_tile.X, start_pos_tile.Y, capture_width, capture_height);
+			Rectangle capture_area = new Rectangle(start_pos_tile.X, start_pos_tile.Y, cTileWidth, cTileHeight);
 
             // Render region to texture
 			Main.instance.TilesRenderer.PrepareForAreaDrawing(capture_area.Left, capture_area.Right, capture_area.Top, capture_area.Bottom, false);
@@ -74,13 +83,12 @@ namespace Mechanica.Content.Contraptions
         {
             Vector2 current_delta = NPC.position - mStartPos;
 
-            if (Math.Abs(current_delta.Length()) > 80f)
+            if (Math.Abs(current_delta.Length()) > 120f)
             {
 				mDefaultStep *= -1;
             }
 
             NPC.position += mDefaultStep;
-			NPC.rotation += 0.01f;
         }
 
 		public override bool PreDraw(SpriteBatch spriteBatch, Vector2 screenPos, Color drawColor)
@@ -90,19 +98,12 @@ namespace Mechanica.Content.Contraptions
 
 		public override void PostDraw(SpriteBatch spriteBatch, Vector2 screenPos, Color drawColor)
 		{
-            int width = 20;
-            int height = 20;
-            Texture2D texture = new Texture2D(spriteBatch.GraphicsDevice, width, height);
-
-			Color[] colorData = new Color[width * height];
-			for (int i = 0; i < colorData.Length; i++)
-				colorData[i] = Color.Cyan;
-
-            texture.SetData(colorData);
+            Texture2D texture = new Texture2D(spriteBatch.GraphicsDevice, NPC.width, NPC.height);
 
             Vector2 draw_pos = NPC.Center - Main.screenPosition;
             Vector2 centre = new Vector2(mTileTexture.Width / 2, mTileTexture.Height / 2);
-            draw_pos.Y -= 640;
+
+           // drawColor = Color.Red;
 
 			spriteBatch.Draw(mTileTexture, draw_pos, null, drawColor, NPC.rotation, centre, 1, SpriteEffects.None, 0);
 		}
